@@ -17,4 +17,10 @@ Console.WriteLine($"Requests:     {options.Requests}");
 Console.WriteLine($"Concurrency:  {options.Concurrency}");
 Console.WriteLine($"Timeout:      {options.TimeoutSeconds}s");
 
+using var client = new HttpClient();
+var runner = new LoadRunner(client);
+
+var one = await runner.SendOneAsync(options.Url);
+
+Console.WriteLine($"{one.StatusCode} in {one.LatencyMs:F0} ms");
 return 0;
