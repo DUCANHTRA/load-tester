@@ -11,6 +11,17 @@ public class LoadRunner
         _client = client;
     }
 
+    public async Task<RequestResult> SendOneAsync(Uri url)
+    {
+        var start = Stopwatch.GetTimestamp();
+
+        using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseContentRead);
+
+        var elapsed = Stopwatch.GetElapsedTime(start);
+
+        return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
+    }
+
     public async Task<RunResult> RunAsync(Options options)
     {
         var results = new List<RequestResult>();
@@ -28,14 +39,18 @@ public class LoadRunner
         return new RunResult(results, totalTime);
     }
 
-    public async Task<RequestResult> SendOneAsync(Uri url)
+    public async Task<RunResult> RunWhenAllAsync(Options options)
     {
         var start = Stopwatch.GetTimestamp();
 
-        using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseContentRead);
+        var tasks = Enumerable.Range(0, options.Requests)
+            .Select(_ => SendOneAsync(options.Url))
+            .ToList();
 
-        var elapsed = Stopwatch.GetElapsedTime(start);
+        var results = await Task.WhenAll(tasks);
 
-        return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
+        var totalTime = Stopwatch.GetElapsedTime(start);
+
+        return new RunResult(results, totalTime);
     }
 }
