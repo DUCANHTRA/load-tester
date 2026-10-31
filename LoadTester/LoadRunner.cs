@@ -39,6 +39,7 @@ public class LoadRunner
         return new RunResult(results, totalTime);
     }
 
+    // Run all the request at the same time. No concurrency
     public async Task<RunResult> RunWhenAllAsync(Options options)
     {
         var start = Stopwatch.GetTimestamp();
@@ -51,6 +52,35 @@ public class LoadRunner
 
         var totalTime = Stopwatch.GetElapsedTime(start);
 
+        return new RunResult(results, totalTime);
+    }
+
+    // Run many requests at the same time with concurrency
+    public async Task<RunResult> RunSemaphoreAsync(Options options)
+    {
+        // make -c tickets
+        using var semaphore = new SemaphoreSlim(options.Concurrency);
+
+        var start = Stopwatch.GetTimestamp();
+
+        var tasks = Enumerable.Range(0, options.Requests)
+            .Select(async _ =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    return await SendOneAsync(options.Url);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }  
+            })
+            .ToList();
+
+        var results = await Task.WhenAll(tasks);
+
+        var totalTime = Stopwatch.GetElapsedTime(start);
         return new RunResult(results, totalTime);
     }
 }
