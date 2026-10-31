@@ -11,6 +11,30 @@ public class LoadRunner
         _client = client;
     }
 
+    public async Task<RunResult> RunAsync(Options options)
+    {
+        var results = new RequestResult[options.Requests];
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = options.Concurrency
+        };
+
+        var start = Stopwatch.GetTimestamp();
+
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, options.Requests),
+            parallelOptions,
+            async (i, _) =>
+            {
+                results[i] = await SendOneAsync(options.Url);
+            });
+
+        var totalTime = Stopwatch.GetElapsedTime(start);
+
+        return new RunResult(results, totalTime);
+    }
+
     public async Task<RequestResult> SendOneAsync(Uri url)
     {
         var start = Stopwatch.GetTimestamp();
@@ -20,67 +44,5 @@ public class LoadRunner
         var elapsed = Stopwatch.GetElapsedTime(start);
 
         return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
-    }
-
-    public async Task<RunResult> RunAsync(Options options)
-    {
-        var results = new List<RequestResult>();
-
-        var start = Stopwatch.GetTimestamp();
-
-        for (var i = 0; i < options.Requests; i++)
-        {
-            var result = await SendOneAsync(options.Url);
-            results.Add(result);
-        }
-
-        var totalTime = Stopwatch.GetElapsedTime(start);
-
-        return new RunResult(results, totalTime);
-    }
-
-    // Run all the request at the same time. No concurrency
-    public async Task<RunResult> RunWhenAllAsync(Options options)
-    {
-        var start = Stopwatch.GetTimestamp();
-
-        var tasks = Enumerable.Range(0, options.Requests)
-            .Select(_ => SendOneAsync(options.Url))
-            .ToList();
-
-        var results = await Task.WhenAll(tasks);
-
-        var totalTime = Stopwatch.GetElapsedTime(start);
-
-        return new RunResult(results, totalTime);
-    }
-
-    // Run many requests at the same time with concurrency
-    public async Task<RunResult> RunSemaphoreAsync(Options options)
-    {
-        // make -c tickets
-        using var semaphore = new SemaphoreSlim(options.Concurrency);
-
-        var start = Stopwatch.GetTimestamp();
-
-        var tasks = Enumerable.Range(0, options.Requests)
-            .Select(async _ =>
-            {
-                await semaphore.WaitAsync();
-                try
-                {
-                    return await SendOneAsync(options.Url);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }  
-            })
-            .ToList();
-
-        var results = await Task.WhenAll(tasks);
-
-        var totalTime = Stopwatch.GetElapsedTime(start);
-        return new RunResult(results, totalTime);
     }
 }

@@ -22,7 +22,7 @@ var runner = new LoadRunner(client);
 
 // Run many request
 Console.WriteLine("Running...");
-var run = await runner.RunSemaphoreAsync(options);
+var run = await runner.RunAsync(options);
 
 var latencies = run.Results.Select(r => r.LatencyMs).ToList();
 
