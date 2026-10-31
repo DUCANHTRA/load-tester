@@ -20,7 +20,16 @@ Console.WriteLine($"Timeout:      {options.TimeoutSeconds}s");
 using var client = new HttpClient();
 var runner = new LoadRunner(client);
 
-var one = await runner.SendOneAsync(options.Url);
+// Run many request
+Console.WriteLine("Running...");
+var run = await runner.RunAsync(options);
 
-Console.WriteLine($"{one.StatusCode} in {one.LatencyMs:F0} ms");
+var latencies = run.Results.Select(r => r.LatencyMs).ToList();
+
+Console.WriteLine();
+Console.WriteLine($"Requests sent:       {run.Results.Count}");
+Console.WriteLine($"Total time:          {run.TotalTime.TotalSeconds:F2} s");
+Console.WriteLine($"Average latency:     {latencies.Average():F0} ms");
+Console.WriteLine($"Sum of latencies:    {latencies.Sum() / 1000:F2} s");
+
 return 0;

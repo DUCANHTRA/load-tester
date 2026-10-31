@@ -11,6 +11,23 @@ public class LoadRunner
         _client = client;
     }
 
+    public async Task<RunResult> RunAsync(Options options)
+    {
+        var results = new List<RequestResult>();
+
+        var start = Stopwatch.GetTimestamp();
+
+        for (var i = 0; i < options.Requests; i++)
+        {
+            var result = await SendOneAsync(options.Url);
+            results.Add(result);
+        }
+
+        var totalTime = Stopwatch.GetElapsedTime(start);
+
+        return new RunResult(results, totalTime);
+    }
+
     public async Task<RequestResult> SendOneAsync(Uri url)
     {
         var start = Stopwatch.GetTimestamp();
