@@ -1,3 +1,5 @@
+using Microsoft.VisualBasic;
+
 namespace LoadTester;
 
 public static class ReportPrinter
@@ -13,5 +15,28 @@ public static class ReportPrinter
             writer.WriteLine("Stopped early (Ctrl+C). These numbers are for the requests that finished.");
             writer.WriteLine();
         }
+
+        var stats = Statistics.Calculate(run.Results, run.TotalTime);
+        var failedPercent = stats.Total == 0 ? 0 : 100.0 * stats.Failed / stats.Total;
+
+        writer.WriteLine($"Requests:    {stats.Total}   Succeeded: {stats.Succeeded}   Failed: {stats.Failed} ({failedPercent:F1}%)");
+        writer.WriteLine($"Total time:  {stats.TotalSeconds:F2} s   Throughput: {stats.Throughput:F1} req/s");
+        writer.WriteLine();
+
+        if (stats.Succeeded == 0)
+        {
+            writer.WriteLine("Latency:      no successful requests");
+        }
+        else
+        {
+            writer.WriteLine(
+                $"Latency (ms) min {Ms(stats.MinMs)}   mean {Ms(stats.MeanMs)}   p50 {Ms(stats.P50Ms)}   " +
+                $"p90 {Ms(stats.P90Ms)}   p95 {Ms(stats.P95Ms)}   p99 {Ms(stats.P99Ms)}   max {Ms(stats.MaxMs)}");
+        }
+    }
+
+    private static string Ms(double value)
+    {
+        return value < 10 ? value.ToString("F1") : value.ToString("F0");
     }
 }
