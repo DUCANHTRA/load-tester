@@ -45,15 +45,20 @@ public class LoadRunner
         {
             using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseContentRead, timeoutSource.Token);
 
-            var elapsed = Stopwatch.GetElapsedTime(start);
-
-            return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
+            return new RequestResult(ElapsedMs(start), (int)response.StatusCode, null);
         }
         catch (OperationCanceledException)
         {
-            var elapsed = Stopwatch.GetElapsedTime(start);
-            
-            return new RequestResult(elapsed.TotalMilliseconds, null, "Timeout");
+            return new RequestResult(ElapsedMs(start), null, "Timeout");
         }
+        catch (HttpRequestException ex)
+        {
+            return new RequestResult(ElapsedMs(start), null, ex.HttpRequestError.ToString());
+        }
+    }
+
+    private static double ElapsedMs(long start)
+    {
+        return Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
 }   
