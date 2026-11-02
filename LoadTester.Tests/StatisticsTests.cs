@@ -126,4 +126,32 @@ public class StatisticsTests
 
         Assert.Equal(0, stats.Throughput);
     }
+
+    [Fact]
+    public void CountFailures_groups_by_reason()
+    {
+        var results = new[]
+        {
+            Ok(10),
+            new RequestResult(5, 500, null),
+            new RequestResult(5, 500, null),
+            new RequestResult(5, 404, null),
+            new RequestResult(5, null, "Timeout")
+        };
+
+        var failures = Statistics.CountFailures(results);
+
+        Assert.Equal(3, failures.Count);
+        Assert.Equal(2, failures["HTTP 500"]);
+        Assert.Equal(1, failures["HTTP 404"]);
+        Assert.Equal(1, failures["Timeout"]);
+    }
+
+    [Fact]
+    public void CountFailures_is_empty_when_everything_succeeds()
+    {
+        var failures = Statistics.CountFailures([Ok(1), Ok(2)]);
+
+        Assert.Empty(failures);
+    }
 }
