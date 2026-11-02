@@ -127,31 +127,49 @@ public class StatisticsTests
         Assert.Equal(0, stats.Throughput);
     }
 
+    // ---- CountFailures ----
     [Fact]
-    public void CountFailures_groups_by_reason()
+    public void CountStatusCodes_counts_each_code()
     {
         var results = new[]
         {
             Ok(10),
-            new RequestResult(5, 500, null),
+            Ok(12),
             new RequestResult(5, 500, null),
             new RequestResult(5, 404, null),
             new RequestResult(5, null, "Timeout")
         };
 
-        var failures = Statistics.CountFailures(results);
+        var codes = Statistics.CountStatusCodes(results);
 
-        Assert.Equal(3, failures.Count);
-        Assert.Equal(2, failures["HTTP 500"]);
-        Assert.Equal(1, failures["HTTP 404"]);
-        Assert.Equal(1, failures["Timeout"]);
+        Assert.Equal(3, codes.Count);
+        Assert.Equal(2, codes[200]);
+        Assert.Equal(1, codes[404]);
+        Assert.Equal(1, codes[500]);
     }
 
     [Fact]
-    public void CountFailures_is_empty_when_everything_succeeds()
+    public void CountErrors_counts_each_error_text_and_ignores_bad_status_codes()
     {
-        var failures = Statistics.CountFailures([Ok(1), Ok(2)]);
+        var results = new[]
+        {
+            Ok(10),
+            new RequestResult(5, 500, null),
+            new RequestResult(5, null, "Timeout"),
+            new RequestResult(5, null, "Timeout"),
+            new RequestResult(5, null, "ConnectionError")
+        };
 
-        Assert.Empty(failures);
+        var errors = Statistics.CountErrors(results);
+
+        Assert.Equal(2, errors.Count);
+        Assert.Equal(2, errors["Timeout"]);
+        Assert.Equal(1, errors["ConnectionError"]);
+    }
+
+    [Fact]
+    public void CountErrors_is_empty_when_there_are_no_errors()
+    {
+        Assert.Empty(Statistics.CountErrors([Ok(1), Ok(2)]));
     }
 }
