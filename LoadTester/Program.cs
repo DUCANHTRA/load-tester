@@ -31,4 +31,13 @@ Console.WriteLine($"Requests:     {stats.Total}   Succeeded: {stats.Succeeded}  
 Console.WriteLine($"Total time:   {stats.TotalSeconds:F2} s   Throughput: {stats.Throughput:F1} req/s");
 Console.WriteLine($"Latency (ms): min {stats.MinMs:F0}  mean {stats.MeanMs:F0}  p50 {stats.P50Ms:F0}  p90 {stats.P90Ms:F0}  p95 {stats.P95Ms:F0}  p99 {stats.P99Ms:F0}  max {stats.MaxMs:F0}");
 
+var failures = Statistics.CountFailures(run.Results);
+if (failures.Count > 0)
+{
+    Console.WriteLine("Failures");
+    foreach (var (reason, count) in failures)
+    {
+        Console.WriteLine($"  {reason}: {count}");
+    }
+}
 return 0;

@@ -47,4 +47,13 @@ public static class Statistics
 
         return sortedValues[index];
     }
+
+    public static IReadOnlyDictionary<string, int> CountFailures(IReadOnlyList<RequestResult> results)
+    {
+        return results
+            .Where(r => !r.IsSuccess)
+            .GroupBy(r => r.Error ?? $"HTTP {r.StatusCode}")
+            .OrderByDescending(g => g.Count())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
 }
