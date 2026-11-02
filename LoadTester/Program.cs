@@ -18,7 +18,7 @@ Console.WriteLine($"Concurrency:  {options.Concurrency}");
 Console.WriteLine($"Timeout:      {options.TimeoutSeconds}s");
 Console.WriteLine();
 
-using var client = new HttpClient();
+using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
 var runner = new LoadRunner(client);
 
 Console.WriteLine("Running...");

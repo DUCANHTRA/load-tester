@@ -27,7 +27,7 @@ public class LoadRunner
             parallelOptions,
             async (i, _) =>
             {
-                results[i] = await SendOneAsync(options.Url);
+                results[i] = await SendOneAsync(options.Url, TimeSpan.FromSeconds(options.TimeoutSeconds));
             });
 
         var totalTime = Stopwatch.GetElapsedTime(start);
@@ -35,14 +35,25 @@ public class LoadRunner
         return new RunResult(results, totalTime);
     }
 
-    public async Task<RequestResult> SendOneAsync(Uri url)
+    public async Task<RequestResult> SendOneAsync(Uri url, TimeSpan timeout)
     {
         var start = Stopwatch.GetTimestamp();
 
-        using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseContentRead);
+        using var timeoutSource = new CancellationTokenSource(timeout);
+    
+        try
+        {
+            using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseContentRead, timeoutSource.Token);
 
-        var elapsed = Stopwatch.GetElapsedTime(start);
+            var elapsed = Stopwatch.GetElapsedTime(start);
 
-        return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
+            return new RequestResult(elapsed.TotalMilliseconds, (int)response.StatusCode, null);
+        }
+        catch (OperationCanceledException)
+        {
+            var elapsed = Stopwatch.GetElapsedTime(start);
+            
+            return new RequestResult(elapsed.TotalMilliseconds, null, "Timeout");
+        }
     }
-}
+}   
