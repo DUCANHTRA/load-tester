@@ -172,4 +172,20 @@ public class StatisticsTests
     {
         Assert.Empty(Statistics.CountErrors([Ok(1), Ok(2)]));
     }
+
+    [Fact]
+    public void Histogram_counts_latencies_in_buckets()
+    {
+        var results = new[] { Ok(1), Ok(3), Ok(15), Ok(60), Ok(70) };
+
+        var buckets = Statistics.Histogram(results);
+
+        // under 5, 5-10, 10-20, 20-50, 50-100
+        Assert.Equal(5, buckets.Count);
+        Assert.Equal(2, buckets[0].Count);
+        Assert.Equal(0, buckets[1].Count);
+        Assert.Equal(1, buckets[2].Count);
+        Assert.Equal(0, buckets[3].Count);
+        Assert.Equal(2, buckets[4].Count);
+    }
 }

@@ -60,6 +60,28 @@ public static class ReportPrinter
 
             writer.WriteLine();
         }
+
+        var histogram = Statistics.Histogram(run.Results);
+        if (histogram.Count > 0)
+        {
+            var biggest = histogram.Max(bucket => bucket.Count);
+            writer.WriteLine("Latency spread");
+
+            foreach (var bucket in histogram)
+            {
+                // Scale each bar so the largest bucket uses 30 # characters.
+                var length = bucket.Count == 0
+                    ? 0
+                    // Keep non-empty buckets visible with at least one #.
+                    : Math.Max(1, (int)Math.Round(bucket.Count * 30.0 / biggest));
+
+                // Pad the label and bar so all counts line up in columns.
+                writer.WriteLine(
+                    $"  {bucket.Label,-18} {new string('#', length),-30} {bucket.Count}");
+            }
+
+            writer.WriteLine();
+        }
     }
 
     private static string Ms(double value)
