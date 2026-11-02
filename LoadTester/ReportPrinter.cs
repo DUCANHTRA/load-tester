@@ -33,6 +33,33 @@ public static class ReportPrinter
                 $"Latency (ms) min {Ms(stats.MinMs)}   mean {Ms(stats.MeanMs)}   p50 {Ms(stats.P50Ms)}   " +
                 $"p90 {Ms(stats.P90Ms)}   p95 {Ms(stats.P95Ms)}   p99 {Ms(stats.P99Ms)}   max {Ms(stats.MaxMs)}");
         }
+        writer.WriteLine();
+
+        var statusCodes = Statistics.CountStatusCodes(run.Results);
+        if (statusCodes.Count > 0)
+        {
+            writer.WriteLine("Status codes");
+
+            foreach (var (code, count) in statusCodes.OrderBy(pair => pair.Key))
+            {
+                writer.WriteLine($"  {code}  x {count}");
+            }
+            
+            writer.WriteLine();
+        }
+
+        var errors = Statistics.CountErrors(run.Results);
+        if (errors.Count > 0)
+        {
+            writer.WriteLine("Errors");
+
+            foreach (var (error, count) in errors.OrderByDescending(pair => pair.Value))
+            {
+                writer.WriteLine($"  {error}  x {count}");
+            }
+
+            writer.WriteLine();
+        }
     }
 
     private static string Ms(double value)

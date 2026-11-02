@@ -48,12 +48,19 @@ public static class Statistics
         return sortedValues[index];
     }
 
-    public static IReadOnlyDictionary<string, int> CountFailures(IReadOnlyList<RequestResult> results)
+    public static IReadOnlyDictionary<string, int> CountErrors(IReadOnlyList<RequestResult> results)
     {
         return results
-            .Where(r => !r.IsSuccess)
-            .GroupBy(r => r.Error ?? $"HTTP {r.StatusCode}")
-            .OrderByDescending(g => g.Count())
+            .Where(r => r.Error is not null)
+            .GroupBy(r => r.Error!)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    public static IReadOnlyDictionary<int, int> CountStatusCodes(IReadOnlyList<RequestResult> results)
+    {
+        return results
+            .Where(r => r.StatusCode is not null)
+            .GroupBy(r => r.StatusCode!.Value)
             .ToDictionary(g => g.Key, g => g.Count());
     }
 }
