@@ -76,4 +76,22 @@ public class ArgumentParserTests
         Assert.True(result.IsSuccess);
         Assert.Equal(5, result.Options!.Concurrency);
     }
+
+    [Fact]
+    public void Json_flag_turns_json_on()
+    {
+        var result = ArgumentParser.Parse(["https://example.com", "--json", "-n", "5"]);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Options!.Json);
+        Assert.Equal(5, result.Options.Requests);
+    }
+
+    [Fact]
+    public void Json_is_off_by_default()
+    {
+        var result = ArgumentParser.Parse(["https://example.com"]);
+
+        Assert.False(result.Options!.Json);
+    }
 }

@@ -34,6 +34,15 @@ var runner = new LoadRunner(client);
 Console.Error.WriteLine("Running... (Ctrl+C to stop)");
 var run = await runner.RunAsync(options, cts.Token);
 
-ReportPrinter.Print(Console.Out, options, run);
+var report = Report.Create(options, run);
+
+if (options.Json)
+{
+    JsonReportWriter.Write(Console.Out, report);
+}
+else
+{
+    ReportPrinter.Print(Console.Out, report);
+}
 
 return 0;

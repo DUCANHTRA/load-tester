@@ -14,10 +14,20 @@ public static class ArgumentParser
         var requests = 100;
         var concurrency = 10;
         var timeoutSeconds = 10;
+        var json = false;
 
-        for (var i = 1; i < args.Length; i += 2)
+        var i = 1;
+
+        while (i < args.Length)
         {
             var flag = args[i];
+
+            if (flag == "--json")
+            {
+                json = true;
+                i++;
+                continue;
+            }
 
             if (i + 1 >= args.Length)
                 return Fail($"Missing value after {flag}.");
@@ -32,12 +42,14 @@ public static class ArgumentParser
                 case "-t": timeoutSeconds = value; break;
                 default: return Fail($"Unknown option '{flag}'.");
             }
+
+            i += 2;
         }
 
         if (concurrency > requests)
             concurrency = requests;
 
-        return new ParseResult(new Options(url, requests, concurrency, timeoutSeconds), null);
+        return new ParseResult(new Options(url, requests, concurrency, timeoutSeconds, json), null);
     }
 
     private static ParseResult Fail(string error) => new(null, error);
