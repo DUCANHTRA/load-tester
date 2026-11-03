@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace LoadTester.Tests;
 
@@ -45,6 +46,22 @@ public sealed class LocalTestServer : IAsyncDisposable
             {
                 ExitRequest();
             }
+        });
+
+        _app.MapGet("/ok", () => Results.Ok("ok"));
+        _app.MapGet("/fail", () => Results.StatusCode(500));
+        _app.MapGet("/slow", async (int? ms, CancellationToken cancel) =>
+        {
+            try
+            {
+                await Task.Delay(ms ?? 200, cancel);
+            }
+            catch (OperationCanceledException)
+            {
+                // the client gave up, so we stop waiting
+            }
+
+            return Results.Ok("slow");
         });
     }
 
