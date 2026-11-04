@@ -64,4 +64,19 @@ public class LoadRunnerServerTests
         Assert.True(stats.MinMs >= 150);
         Assert.True(stats.P50Ms >= 150);
     }
+
+    [Fact]
+    public async Task Short_timeout_gives_timeouts()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+
+        var run = await RunAsync(
+            server.Url("slow?ms=3000"), requests: 3, concurrency: 3, timeoutSeconds: 1);
+
+        Assert.Equal(3, run.Results.Count);
+        Assert.All(run.Results, r => Assert.Equal("Timeout", r.Error));
+        Assert.All(run.Results, r => Assert.Null(r.StatusCode));
+        Assert.All(run.Results, r => Assert.InRange(r.LatencyMs, 900, 2500));
+        Assert.True(run.TotalTime < TimeSpan.FromSeconds(2.5), "The run waited for the slow server");
+    }
 }
