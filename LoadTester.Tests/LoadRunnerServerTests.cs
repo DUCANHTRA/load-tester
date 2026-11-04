@@ -116,4 +116,20 @@ public class LoadRunnerServerTests
             $"c=1 took {oneByOne.TotalTime.TotalMilliseconds} ms, c=10 took {tenAtOnce.TotalTime.TotalMilliseconds} ms"
         );
     }
+
+    [Fact]
+    public async Task Cancelling_during_a_run_stops_quickly()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+        using var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromMilliseconds(300));
+
+        var run = await RunAsync(
+            server.Url("/slow?ms=3000"), requests: 10, concurrency: 2, timeoutSeconds: 30,
+            cancellationToken: cts.Token);
+
+        Assert.True(run.WasCancelled);
+        Assert.Empty(run.Results);
+        Assert.True(run.TotalTime < TimeSpan.FromSeconds(2), "The run did not stop quickly");
+    }
 }
