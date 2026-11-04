@@ -79,4 +79,41 @@ public class LoadRunnerServerTests
         Assert.All(run.Results, r => Assert.InRange(r.LatencyMs, 900, 2500));
         Assert.True(run.TotalTime < TimeSpan.FromSeconds(2.5), "The run waited for the slow server");
     }
+
+    [Fact]
+    public async Task One_at_a_time_never_overlaps()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+
+        var run = await RunAsync(server.Url("/slow?ms=50"), requests: 10, concurrency: 1);
+
+        Assert.Equal(10, server.TotalRequests);
+        Assert.Equal(1, server.MaxInFlight);
+    }
+
+    [Fact]
+    public async Task Concurrency_limit_is_respected()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+
+        var run = await RunAsync(server.Url("/slow?ms=200"), requests: 40, concurrency: 5);
+
+        Assert.Equal(40, server.TotalRequests);
+        Assert.InRange(server.MaxInFlight, 2, 5);
+    }
+
+    [Fact]
+    public async Task Concurrency_makes_the_run_faster()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+        var url = server.Url("/slow?ms=100");
+
+        var oneByOne = await RunAsync(url, requests: 10, concurrency: 1);
+        var tenAtOnce = await RunAsync(url, requests: 10, concurrency: 10);
+
+        Assert.True(
+            tenAtOnce.TotalTime < oneByOne.TotalTime / 2,
+            $"c=1 took {oneByOne.TotalTime.TotalMilliseconds} ms, c=10 took {tenAtOnce.TotalTime.TotalMilliseconds} ms"
+        );
+    }
 }
