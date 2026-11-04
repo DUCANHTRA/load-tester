@@ -50,4 +50,18 @@ public class LoadRunnerServerTests
         Assert.Equal(50, Statistics.CountStatusCodes(run.Results)[500]);
         Assert.Empty(Statistics.CountErrors(run.Results));
     }
+
+    [Fact]
+    public async Task Slow_endpoint_shows_up_in_the_latency()
+    {
+        await using var server = await LocalTestServer.StartAsync();
+
+        var run = await RunAsync(server.Url("/slow?ms=200"), requests: 10, concurrency:10);
+        var stats = Statistics.Calculate(run.Results, run.TotalTime);
+
+        Assert.All(run.Results, r => Assert.True(r.IsSuccess));
+        Assert.All(run.Results, r => Assert.True(r.LatencyMs >= 150, $"Latency was only {r.LatencyMs} ms"));
+        Assert.True(stats.MinMs >= 150);
+        Assert.True(stats.P50Ms >= 150);
+    }
 }
