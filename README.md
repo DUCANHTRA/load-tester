@@ -1,5 +1,7 @@
 # loadtest
 
+![CI](https://github.com/DUCANHTRA/load-tester/actions/workflows/ci.yml/badge.svg)
+
 A command-line load tester for HTTP APIs. It sends N requests to a URL, a few at a time, and reports latency percentiles, throughput, status codes and errors.
 
 I built it in C# and .NET to learn `async`/`await`, `Task`, `HttpClient`, cancellation, and testing with a real local server.
