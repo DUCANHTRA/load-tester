@@ -67,3 +67,42 @@ Some tests start a small web server on a random local port and send real request
 ## Responsible use
 
 Only test servers that you own, or that you have permission to test.
+
+## How it works
+
+~~~text
+args  --->  ArgumentParser  --->  Options
+                                     |
+                                     v
+                               LoadRunner  --->  N requests, C at a time
+                                     |
+                                     v
+                            list of RequestResult
+                                     |
+                                     v
+                     Statistics  --->  Report  --->  text or JSON
+~~~
+
+**Concurrency.** `LoadRunner` uses `Parallel.ForEachAsync` with `MaxDegreeOfParallelism` set to the `-c` value. At most C requests are in flight. When one finishes, the next one starts. All requests share one `HttpClient`.
+
+**No shared list.** Each request writes its result into its own slot in an array (`results[i]`). Two tasks never write to the same place, so no lock is needed.
+
+**Latency.** The time from sending the request until the whole response body has been read, measured with `Stopwatch`.
+
+**Percentiles.** Nearest-rank method. Sort the successful latencies, then rank = ceil(p x count / 100), and take the value at that rank.
+
+**What counts as failed.** A request fails if it times out, has a network error, or gets a status code outside 200-299. Failures are counted and listed, but left out of the latency numbers.
+
+**Timeouts and Ctrl+C.** Each request has its own timeout. Ctrl+C cancels a second token that every request watches, so the run stops and still prints a report.
+
+**Tests.** Unit tests cover the math and the argument parser. Integration tests start a small local server that counts the requests it sees. They check that the tool sends exactly N requests and never more than C at a time.
+
+## Limits
+
+- **Measured from the client.** The numbers include your network and your own machine, not only the server. Run it on a quiet machine, and compare runs made in the same way.
+- **Latency** is the time until the whole response body is read.
+- **No warm-up.** The first requests are often slower (DNS, connection setup). They are included.
+- **Closed loop.** The tool waits for answers before it uses a free slot. If the server gets very slow, the tool sends fewer requests, which can hide how bad it is (known as coordinated omission). A fixed-rate mode would fix this.
+- **GET only.** No POST bodies, custom headers or login yet.
+- **Percentiles need enough requests.** With fewer than 100 requests, p99 is just the maximum.
+- This is a learning project. For serious load testing, use a tool like k6, wrk or bombardier.
