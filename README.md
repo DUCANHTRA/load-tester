@@ -48,12 +48,16 @@ loadtest <url> [-n requests] [-c concurrency] [-t timeout-seconds] [--json]
 
 Press Ctrl+C to stop early. You still get a report for the requests that finished.
 
+## Install
+
+Download the zip for your system from the [Releases](https://github.com/DUCANHTRA/load-tester/releases) page, unzip it, and run `loadtest`. You do not need .NET installed.
+
 ## Build from source
 
 You need the .NET 10 SDK.
 
 ~~~bash
-git clone https://github.com/YOUR-USERNAME/load-tester.git
+git clone https://github.com/DUCANHTRA/load-tester.git
 cd load-tester
 dotnet run --project LoadTester -- https://localhost:5116/api/health/database -n 20
 ~~~
